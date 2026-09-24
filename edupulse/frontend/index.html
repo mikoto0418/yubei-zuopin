@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0D0D0F" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <title>EduPulse · AI 学习分析助手</title>
+    <style>
+      /* 首屏底色内联，避免深色模式下的白闪 */
+      html, body { margin: 0; background: #F2F2F7; }
+      @media (prefers-color-scheme: dark) {
+        html, body { background: #0D0D0F; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

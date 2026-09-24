@@ -1,0 +1,95 @@
+/* ===== ScholarBoard 全局基础层 · Apple 设计语言 =====
+   本文件只保留「跨页排版助手 + 少量 Apple 组件类 + Naive UI 局部校准」。
+   令牌全部来自 src/apple-tokens.css（--tint 已覆盖为 --orange）。
+   组件样式一律交给 Naive UI 的 themeOverrides（见 src/theme.js）。 */
+
+:root {
+  /* 主题色：ScholarBoard = --orange */
+  --tint: var(--orange);
+  --tint-soft: rgba(255, 149, 0, 0.12);
+  /* 外壳顶栏高度：编辑器页用它计算满屏三栏高度 */
+  --shell-head: 52px;
+}
+
+@media (max-width: 720px) {
+  :root { --shell-head: 48px; }
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app { height: 100%; }
+
+/* ===== 跨页排版助手（纯排版，无组件语义） ===== */
+
+/* 页面主标题（每页只有一个） */
+.sb-page-title { font-size: var(--fs-large-title); line-height: var(--lh-large-title); font-weight: var(--fw-large-title); letter-spacing: -0.02em; margin: 0; }
+/* 区块标题 */
+.sb-section-title { font-size: var(--fs-title2); line-height: var(--lh-title2); font-weight: var(--fw-title2); letter-spacing: -0.02em; margin: 0; }
+/* 卡片标题 / 列表主文案 */
+.sb-headline { font-size: var(--fs-headline); line-height: var(--lh-headline); font-weight: var(--fw-headline); }
+.sb-body { font-size: var(--fs-body); line-height: var(--lh-body); }
+.sb-subhead { font-size: var(--fs-subhead); line-height: var(--lh-subhead); }
+.sb-footnote { font-size: var(--fs-footnote); line-height: var(--lh-footnote); }
+.sb-caption { font-size: var(--fs-caption); line-height: var(--lh-caption); }
+
+.sb-secondary { color: var(--label-secondary); }
+.sb-tertiary { color: var(--label-tertiary); }
+.sb-danger-text { color: var(--red); }
+.sb-tint-text { color: var(--tint); }
+
+/* 卡片：无边框 + 极浅阴影（§2.3） */
+.sb-card {
+  background: var(--bg-surface);
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-5);
+}
+
+/* 发丝分隔线 */
+.sb-rule { height: 1px; background: var(--separator); border: none; margin: 0; }
+
+/* 色点：项目/标签颜色标识 */
+.sb-dot { width: 10px; height: 10px; border-radius: var(--radius-full); flex: none; display: inline-block; }
+
+/* 毛玻璃（仅悬浮层） */
+.sb-glass { background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+
+/* 胶囊键位提示 */
+.sb-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--label-secondary);
+  background: var(--fill-secondary);
+  border-radius: var(--radius-sm);
+}
+
+/* 页面进入动效（§2.6） */
+.sb-enter { animation: sbEnter var(--dur-base) var(--ease-standard) both; }
+@keyframes sbEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* toast 兜底（Provider 未挂载时） */
+.sb-toast {
+  position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-elevated); color: var(--label);
+  padding: 10px 20px; border-radius: var(--radius-full);
+  font-size: var(--fs-subhead);
+  box-shadow: var(--shadow-float);
+  z-index: 3000;
+}
+
+/* 滚动条：低调、圆角 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--fill-primary); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--fill-primary); filter: brightness(0.9); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ===== Naive UI 局部校准 ===== */
+/* 卡片标题不走衬线，保持 Apple 无衬线体系统一 */
+.n-card > .n-card-header .n-card-header__main { font-family: var(--font-sans); }
+.n-drawer .n-drawer-header__main,
+.n-modal .n-card-header__main { font-family: var(--font-sans); }
+
+/* 表格去掉外框描边，只留发丝行线 */
+.n-data-table .n-data-table-table { border-radius: var(--radius-md); }

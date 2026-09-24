@@ -1,0 +1,1 @@
+{"configurations":[{"name":"chronicle-frontend","port":5205,"runtimeArgs":["run","dev"],"runtimeExecutable":"npm"}],"version":"0.0.1"}

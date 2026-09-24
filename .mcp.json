@@ -1,0 +1,81 @@
+{
+  "mcpServers": {
+    "windows-mcp": {
+      "type": "stdio",
+      "command": "C:\\Users\\Lenovo\\.local\\bin\\windows-mcp.exe",
+      "args": ["serve", "--exclude-tools", "PowerShell", "Registry"],
+      "startup_timeout_ms": 120000
+    },
+    "mcprouter": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "mcpr-cli@latest", "connect"],
+      "env": { "MCPR_TOKEN": "mcpr_XcKuVVOpLFdgX3_HE-A-6KPYP4-StI4u" }
+    },
+    "Playwright-MCP": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@iflow-mcp/playwright-mcp@0.0.32"]
+    },
+    "chrome-devtools-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "chrome-devtools-mcp@latest"],
+      "env": { "PROGRAMFILES": "C:\\Program Files", "SystemRoot": "C:\\Windows" }
+    },
+    "cloudbase": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "@cloudbase/cloudbase-mcp@latest"],
+      "env": { "INTEGRATION_IDE": "VSCode" }
+    },
+    "exa": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "exa-mcp-server@latest"],
+      "env": { "EXA_API_KEY": "6a2a36a5-60bc-4bea-bae7-47524c8b79e1" }
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "jshook": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@jshookmcp/jshook"]
+    },
+    "mcp-deepwiki": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "mcp-deepwiki@latest"]
+    },
+    "open-design": {
+      "type": "stdio",
+      "command": "C:\\nvm4w\\nodejs\\node.exe",
+      "args": ["C:\\Users\\Lenovo\\open-design\\apps\\daemon\\dist\\cli.js", "mcp"],
+      "env": {
+        "ELECTRON_RUN_AS_NODE": "1",
+        "OD_DATA_DIR": "C:\\Users\\Lenovo\\open-design\\.od",
+        "OD_SIDECAR_IPC_PATH": "\\\\.\\pipe\\open-design-default-daemon"
+      }
+    },
+    "ssh-manager": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:/nvm4w/nodejs/node_modules/mcp-ssh-manager/src/index.js"],
+      "env": { "SSH_CONFIG_PATH": "C:/Users/Lenovo/.codex/ssh-config.toml" }
+    },
+    "stitch": {
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=pyzhzrgrdvpgjbwgxjlh"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  }
+}

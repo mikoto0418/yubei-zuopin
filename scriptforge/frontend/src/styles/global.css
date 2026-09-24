@@ -1,0 +1,305 @@
+/* ============================================================
+   ScriptForge 全局样式
+   基底：Apple 设计语言（apple-tokens.css）
+   差异化维度：纸张质感 + 衬线正文 —— 仅作用于「编辑器区域」，
+   界面元素（按钮 / 表单 / 导航）一律保持无衬线。
+   ============================================================ */
+
+:root {
+  /* ScriptForge 主题色：Indigo（Apple 系统色） */
+  --tint: var(--indigo);
+  --tint-soft: rgba(88, 86, 214, 0.12);
+
+  /* 纸张与正文（本项目的差异化令牌，只在这里定义一次） */
+  --paper: #FBF9F6;              /* 米色纸：正文编辑区底色 */
+  --paper-edge: #F2EDE6;         /* 纸张边缘/装订线 */
+  --paper-line: rgba(120, 100, 70, 0.10); /* 稿纸横线 */
+  --ink: #23201C;                /* 纸上墨色，对比度 > 4.5:1 */
+  --ink-soft: rgba(35, 32, 28, 0.55);
+  --serif-size: 17px;            /* 正文衬线 17px */
+  --serif-leading: 1.8;          /* 行高 1.8 */
+}
+
+/* 深色模式下纸张转为深米色，仍然保持"纸"的观感 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1E1B18;
+    --paper-edge: #26221E;
+    --paper-line: rgba(220, 200, 170, 0.10);
+    --ink: rgba(240, 235, 226, 0.92);
+    --ink-soft: rgba(240, 235, 226, 0.55);
+  }
+}
+
+* { box-sizing: border-box; }
+
+#app { min-height: 100vh; }
+
+/* ---------- Arco 组件库压到 Apple 基底之下 ---------- */
+
+body .arco-btn-primary {
+  background-color: var(--tint);
+  border-radius: var(--radius-md);
+}
+body .arco-btn-primary:hover { background-color: var(--tint); opacity: 0.88; }
+body .arco-btn { border-radius: var(--radius-md); font-family: var(--font-sans); }
+body .arco-btn-secondary {
+  background: var(--fill-secondary);
+  color: var(--tint);
+}
+
+body .arco-input-wrapper,
+body .arco-textarea-wrapper,
+body .arco-select-view {
+  background: var(--fill-secondary);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+}
+body .arco-input-wrapper:hover,
+body .arco-textarea-wrapper:hover,
+body .arco-select-view:hover {
+  background: var(--fill-primary);
+  border-color: transparent;
+}
+body .arco-input-wrapper.arco-input-focus,
+body .arco-textarea-wrapper.arco-textarea-focus,
+body .arco-select-view.arco-select-view-focus {
+  background: var(--bg-surface);
+  border-color: var(--tint);
+  box-shadow: 0 0 0 4px var(--tint-soft);
+}
+
+body .arco-card {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+body .arco-tag {
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-footnote);
+  font-weight: 400;
+}
+
+body .arco-table-th { background: transparent; font-weight: 600; }
+body .arco-table-td,
+body .arco-table-th { border-color: var(--separator); }
+body .arco-table-stripe .arco-table-tr:nth-child(even) .arco-table-td { background: transparent; }
+
+body .arco-modal { border-radius: var(--radius-xl); }
+body .arco-drawer { border-radius: var(--radius-xl) 0 0 var(--radius-xl); }
+body .arco-tree-node-title { border-radius: var(--radius-sm); }
+body .arco-pagination-item { border-radius: var(--radius-sm); }
+
+/* ---------- 通用布局 ---------- */
+
+.sf-page {
+  padding: var(--sp-8) var(--sp-8) var(--sp-10);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.sf-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.sf-page-title {
+  font-size: var(--fs-large-title);
+  line-height: var(--lh-large-title);
+  font-weight: var(--fw-large-title);
+  letter-spacing: -0.02em;
+  color: var(--label);
+}
+
+.sf-page-sub {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-subhead);
+  color: var(--label-secondary);
+}
+
+.sf-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--sp-5);
+}
+
+.sf-muted { color: var(--label-secondary); }
+.sf-caption { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--label-secondary); }
+
+.sf-grid {
+  display: grid;
+  gap: var(--sp-4);
+}
+.sf-grid--cards { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+
+/* 空态 / 错误态：统一的居中块 */
+.sf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-12) var(--sp-6);
+  text-align: center;
+  color: var(--label-secondary);
+}
+.sf-empty__art {
+  width: 56px; height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--fill-secondary);
+  display: grid; place-items: center;
+  font-size: 24px;
+  color: var(--label-tertiary);
+}
+
+/* 骨架屏 */
+.sf-skeleton-row {
+  height: 16px;
+  margin-bottom: var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--fill-secondary) 25%, var(--fill-primary) 37%, var(--fill-secondary) 63%);
+  background-size: 400% 100%;
+  animation: sf-shimmer 1.4s ease infinite;
+}
+@keyframes sf-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* ---------- 纸张与衬线正文（ScriptForge 唯一的差异化区域） ---------- */
+
+.sf-paper {
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--paper-line), var(--shadow-card);
+  position: relative;
+}
+
+/* 装订线：纸张左侧的一道浅浅的边，暗示"稿纸" */
+.sf-paper::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--paper-edge);
+}
+
+.sf-serif {
+  font-family: var(--font-serif);
+  font-size: var(--serif-size);
+  line-height: var(--serif-leading);
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+/* 稿纸横线：正文区背景 */
+.sf-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--serif-size) * var(--serif-leading) - 1px),
+    var(--paper-line) calc(var(--serif-size) * var(--serif-leading) - 1px),
+    var(--paper-line) calc(var(--serif-size) * var(--serif-leading))
+  );
+}
+
+/* 正文编辑框：无边框，靠纸张本身表达边界 */
+.sf-editor {
+  width: 100%;
+  min-height: 320px;
+  padding: var(--sp-5) var(--sp-6) var(--sp-6) var(--sp-8);
+  border: none;
+  outline: none;
+  resize: vertical;
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: var(--serif-size);
+  line-height: var(--serif-leading);
+  color: var(--ink);
+}
+.sf-editor::placeholder { color: var(--ink-soft); }
+.sf-editor:focus { outline: none; }
+
+/* 剧本格式预览：场景标题行 */
+.sf-slug {
+  font-family: var(--font-serif);
+  font-size: var(--serif-size);
+  line-height: var(--serif-leading);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 对白行：角色名居中大写感 + 台词缩进 */
+.sf-dialogue-line { margin: var(--sp-3) 0; }
+.sf-dialogue-who {
+  font-family: var(--font-serif);
+  font-size: var(--serif-size);
+  line-height: var(--serif-leading);
+  color: var(--ink);
+  text-align: center;
+  font-weight: 600;
+}
+.sf-dialogue-say {
+  font-family: var(--font-serif);
+  font-size: var(--serif-size);
+  line-height: var(--serif-leading);
+  color: var(--ink);
+  padding: 0 18%;
+}
+.sf-dialogue-cue {
+  font-family: var(--font-serif);
+  font-size: var(--serif-size);
+  line-height: var(--serif-leading);
+  color: var(--ink-soft);
+  padding: 0 26%;
+}
+
+/* ---------- 状态徽章 ---------- */
+
+.sf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 22px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
+  line-height: 1;
+  background: var(--fill-secondary);
+  color: var(--label-secondary);
+  white-space: nowrap;
+}
+.sf-badge--draft { background: var(--fill-secondary); color: var(--label-secondary); }
+.sf-badge--reviewing { background: rgba(255, 149, 0, 0.14); color: #A86200; }
+.sf-badge--revising { background: rgba(255, 59, 48, 0.12); color: #B3261E; }
+.sf-badge--approved { background: rgba(52, 199, 89, 0.14); color: #1B7A37; }
+.sf-badge--archived { background: var(--fill-primary); color: var(--label-tertiary); }
+.sf-badge--final { background: rgba(52, 199, 89, 0.14); color: #1B7A37; }
+.sf-badge--outline { background: var(--fill-secondary); color: var(--label-secondary); }
+.sf-badge--drafted { background: rgba(88, 86, 214, 0.12); color: #4340B8; }
+.sf-badge--revised { background: rgba(90, 200, 250, 0.18); color: #0B6C93; }
+
+@media (prefers-color-scheme: dark) {
+  .sf-badge--reviewing { color: #FFB340; }
+  .sf-badge--revising { color: #FF8A80; }
+  .sf-badge--approved,
+  .sf-badge--final { color: #6EE7A0; }
+  .sf-badge--drafted { color: #A5A3F0; }
+  .sf-badge--revised { color: #7FD8F7; }
+}
+
+/* ---------- 动效降级 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

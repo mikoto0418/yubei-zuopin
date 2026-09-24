@@ -1,0 +1,448 @@
+/* ============ MindCare · Apple 基底 + 卡片流 App ============
+   差异化维度保持不变：底部 Tab 栏 + 纵向卡片流 + 全屏沉浸冥想。
+   视觉全部压到 Apple 设计语言之下 —— 浅灰分组底、白色卡片、发丝线、极浅阴影。
+   禁止：霓虹发光、渐变光斑、粗边框、硬投影。
+   令牌一律来自 apple-tokens.css，本文件不重定义颜色/字号。 */
+
+:root {
+  --dock-h: 76px;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--label);
+  background: var(--bg-grouped);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app { position: relative; min-height: 100%; }
+
+/* ============ 舞台：App 形态的滚动容器 ============ */
+.mc-stage {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 var(--sp-6);
+  min-height: 100vh;
+}
+.mc-stage.is-immersive { max-width: none; padding: 0; }
+
+.mc-main {
+  padding: var(--sp-5) 0 calc(var(--dock-h) + var(--sp-10));
+}
+.mc-stage.is-immersive .mc-main { padding: 0; }
+
+/* ============ 底部 Tab 栏（悬浮毛玻璃，唯一允许的毛玻璃区域） ============ */
+.mc-dock {
+  position: fixed;
+  left: 50%;
+  bottom: var(--sp-4);
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 6px 8px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--separator);
+  box-shadow: var(--shadow-float);
+  transition: opacity var(--dur-base) var(--ease-standard),
+              transform var(--dur-base) var(--ease-standard);
+  max-width: calc(100vw - 32px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mc-dock::-webkit-scrollbar { display: none; }
+.mc-stage.is-immersive .mc-dock {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(16px);
+}
+
+.mc-dock-item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 13px;
+  border-radius: var(--radius-full);
+  color: var(--label-secondary);
+  font: inherit;
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-standard),
+              background-color var(--dur-fast) var(--ease-standard);
+}
+.mc-dock-item .mc-dock-icon { display: grid; place-items: center; height: 22px; }
+.mc-dock-item:hover { color: var(--tint); }
+.mc-dock-item.is-active {
+  color: #fff;
+  background: var(--tint);
+}
+.mc-dock-label { letter-spacing: 0; }
+
+/* ============ 悬浮头像 ============ */
+.mc-avatar-fab {
+  position: fixed;
+  top: var(--sp-4);
+  right: var(--sp-5);
+  z-index: 55;
+  transition: opacity var(--dur-base) var(--ease-standard);
+}
+.mc-stage.is-immersive .mc-avatar-fab { opacity: 0; pointer-events: none; }
+.mc-avatar-btn {
+  display: block;
+  border-radius: var(--radius-full);
+  padding: 3px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--separator);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.mc-avatar-btn:active { transform: scale(0.96); }
+
+/* ============ 进入动效：淡入 + 上移 8px ============ */
+.mc-reveal {
+  opacity: 0;
+  transform: translateY(var(--rv-y, 8px));
+  transition: opacity var(--dur-base) var(--ease-standard),
+              transform var(--dur-base) var(--ease-standard);
+}
+.mc-reveal.is-in { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .mc-reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ============ 卡片流 ============ */
+.mc-flow { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+/* ============ 页面标题（Apple Large Title，每页唯一） ============ */
+.page-title {
+  font-size: var(--fs-large-title);
+  line-height: var(--lh-large-title);
+  font-weight: var(--fw-large-title);
+  letter-spacing: -0.02em;
+  color: var(--label);
+}
+
+/* 分区小节标题（Caption 大写） */
+.mc-section-title {
+  font-size: var(--fs-footnote);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--label-secondary);
+  text-transform: uppercase;
+}
+
+/* 大号数字：改用主题色实心，不做渐变文字 */
+.mc-bignum {
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--tint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 卡内强调块：浅填充而非渐变 */
+.mc-tint {
+  border-radius: var(--radius-lg);
+  background: var(--fill-secondary);
+}
+
+/* ============ Mantine 卡片承载层：无边框 + 极浅阴影 ============ */
+.mc-glass {
+  background: var(--bg-surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* ============ 情绪时间轴 ============ */
+.mc-timeline { position: relative; padding-left: 30px; }
+.mc-timeline::before {
+  content: "";
+  position: absolute;
+  left: 9px; top: 6px; bottom: 6px;
+  width: 1px;
+  background: var(--separator);
+}
+.mc-tl-item { position: relative; margin-bottom: var(--sp-3); }
+.mc-tl-item:last-child { margin-bottom: 0; }
+.mc-tl-dot {
+  position: absolute;
+  left: -30px; top: 18px;
+  width: 14px; height: 14px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 0 0 1px var(--separator);
+}
+.mc-tl-card {
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: none;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.mc-tl-card:active { transform: scale(0.995); }
+
+/* ============ 全屏沉浸冥想（深色沉浸是语义需要，非装饰霓虹） ============ */
+.mc-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-8);
+  padding: var(--sp-10) var(--sp-6);
+  background: #000;
+  color: #fff;
+  animation: immersive-in var(--dur-slow) var(--ease-standard) both;
+}
+@keyframes immersive-in { from { opacity: 0; } to { opacity: 1; } }
+
+.mc-immersive .mc-immersive-time {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.mc-immersive .mc-immersive-hint {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--fs-subhead);
+  text-align: center;
+  max-width: 420px;
+  line-height: var(--lh-subhead);
+  min-height: 3.4em;
+}
+.mc-immersive .mc-immersive-exit {
+  position: absolute;
+  top: var(--sp-5); right: var(--sp-5);
+}
+
+/* 呼吸圆环：单一柔光，随呼吸缩放 */
+.mc-breath-ring {
+  position: relative;
+  width: 268px; height: 268px;
+  display: grid;
+  place-items: center;
+}
+.mc-breath-ring::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.mc-breath-core {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.breath {
+  width: 120px; height: 120px; border-radius: var(--radius-full); margin: 0 auto;
+  background: var(--pink);
+  opacity: 0.85;
+  animation: breathe 6s ease-in-out infinite;
+}
+.breath.is-immersive {
+  width: 176px; height: 176px;
+  background: var(--pink);
+  box-shadow: 0 0 80px -10px rgba(255, 45, 85, 0.75);
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(.85); opacity: .6; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .breath, .breath.is-immersive { animation: none; }
+}
+
+/* ============ 未登录客页 ============ */
+.guest-backdrop {
+  min-height: 100vh; display: grid; place-items: center;
+  padding: var(--sp-5); gap: var(--sp-5); text-align: center;
+  background: var(--bg-grouped);
+}
+.guest-placeholder { color: var(--label-secondary); }
+.guest-placeholder h2 {
+  font-size: var(--fs-large-title);
+  line-height: var(--lh-large-title);
+  font-weight: var(--fw-large-title);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--sp-2);
+  color: var(--label);
+}
+.guest-placeholder p { margin: 0; font-size: var(--fs-subhead); }
+
+.brand-halo {
+  width: 72px; height: 72px; margin: 0 auto var(--sp-4);
+  display: grid; place-items: center; border-radius: var(--radius-full);
+  background: var(--tint);
+  color: #fff;
+}
+.brand-halo .logo { font-size: 32px; line-height: 1; }
+
+/* ============ 情绪标签行 ============ */
+.mc-tagrow {
+  background: var(--fill-secondary);
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+/* ============ 测评选项卡 ============ */
+.mc-radio-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
+  cursor: pointer;
+}
+.mc-radio-card:hover { border-color: var(--tint); }
+.mc-radio-card[data-checked] {
+  background: var(--tint-soft);
+  border-color: var(--tint);
+}
+
+/* ============ 对话气泡 ============ */
+.mc-bubble {
+  padding: 10px 14px; border-radius: var(--radius-lg);
+  font-size: var(--fs-subhead); line-height: var(--lh-subhead);
+  word-break: break-word;
+}
+.mc-bubble.user {
+  background: var(--tint);
+  color: #fff;
+  border-bottom-right-radius: var(--radius-sm);
+}
+.mc-bubble.ai {
+  background: var(--fill-secondary);
+  color: var(--label);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+/* ============ AI 陪护：输入条 ============ */
+.mc-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--dock-h) - 96px);
+}
+.mc-chat-body { flex: 1; min-height: 0; }
+.mc-chat-body > div { height: 100%; }
+.mc-chat-composer {
+  position: sticky;
+  bottom: calc(var(--dock-h) + var(--sp-1));
+  padding: var(--sp-2);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--separator);
+  box-shadow: var(--shadow-float);
+  z-index: 20;
+}
+
+/* ============ ECharts 容器 ============ */
+.chart-box { width: 100%; height: 280px; }
+
+/* ============ 列表项（Apple 分组列表） ============ */
+.mc-list { background: var(--bg-surface); border-radius: var(--radius-lg); overflow: hidden; }
+.mc-list-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  min-height: 44px; padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--separator);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.mc-list-row:last-child { border-bottom: none; }
+.mc-list-row[role="button"] { cursor: pointer; }
+.mc-list-row[role="button"]:hover { background: var(--fill-tertiary); }
+.mc-chevron { color: var(--label-tertiary); margin-left: auto; flex-shrink: 0; }
+
+/* ============ 状态时间轴（预约详情） ============ */
+.mc-steps { display: flex; flex-direction: column; gap: 0; }
+.mc-step { display: flex; gap: var(--sp-3); position: relative; padding-bottom: var(--sp-5); }
+.mc-step:last-child { padding-bottom: 0; }
+.mc-step-mark {
+  width: 22px; height: 22px; border-radius: var(--radius-full);
+  display: grid; place-items: center; flex-shrink: 0;
+  background: var(--fill-secondary); color: var(--label-tertiary);
+  font-size: 11px; font-weight: 700; z-index: 1;
+}
+.mc-step.is-done .mc-step-mark { background: var(--tint); color: #fff; }
+.mc-step.is-current .mc-step-mark { background: var(--tint); color: #fff; }
+.mc-step::after {
+  content: ""; position: absolute; left: 10.5px; top: 22px; bottom: 0;
+  width: 1px; background: var(--separator);
+}
+.mc-step:last-child::after { display: none; }
+.mc-step.is-done::after { background: var(--tint); }
+
+/* ============ 五态 ============ */
+.mc-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-3); padding: var(--sp-12) var(--sp-5); text-align: center;
+  color: var(--label-secondary);
+}
+.mc-state-icon { font-size: 40px; line-height: 1; }
+.mc-state h3 { font-size: var(--fs-headline); font-weight: var(--fw-headline); color: var(--label); }
+.mc-state p { font-size: var(--fs-subhead); max-width: 320px; margin: 0; }
+
+/* 骨架屏 */
+.mc-skeleton-card { padding: var(--sp-4); border-radius: var(--radius-lg); background: var(--bg-surface); }
+.mc-skeleton-line { height: 14px; margin-bottom: var(--sp-3); border-radius: var(--radius-sm); }
+.mc-skeleton-line:last-child { margin-bottom: 0; width: 60%; }
+
+/* ============ 窄屏适配 ============ */
+@media (max-width: 560px) {
+  .mc-stage { padding: 0 var(--sp-4); }
+  .mc-main { padding-top: var(--sp-4); }
+  .mc-dock { bottom: var(--sp-3); padding: 5px 6px; }
+  .mc-dock-item { padding: 6px 10px; font-size: 11px; }
+  .mc-immersive .mc-immersive-time { font-size: 44px; }
+  .mc-breath-ring { width: 224px; height: 224px; }
+  .page-title { font-size: 30px; }
+}
+
+/* ---- Markdown 排版 ---- */
+.md { white-space: normal; word-break: break-word; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p { margin: .5em 0; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 { margin: .7em 0 .3em; line-height: 1.35; font-weight: 600; }
+.md h1 { font-size: 1.25em; } .md h2 { font-size: 1.15em; } .md h3, .md h4 { font-size: 1.05em; }
+.md ul, .md ol { margin: .5em 0; padding-left: 1.35em; }
+.md li { margin: .25em 0; }
+.md code {
+  font-family: var(--font-mono); font-size: .9em;
+  padding: 1px 5px; border-radius: var(--radius-sm); background: var(--fill-secondary);
+}
+.md pre {
+  margin: .6em 0; padding: var(--sp-3); border-radius: var(--radius-md);
+  background: var(--fill-secondary); color: var(--label); overflow-x: auto;
+  font-size: var(--fs-footnote); line-height: 1.6;
+}
+.md pre code { padding: 0; background: none; color: inherit; }
+.md blockquote {
+  margin: .6em 0; padding: 2px var(--sp-3);
+  border-left: 2px solid var(--tint); color: var(--label-secondary);
+}
+.md a { color: var(--tint); }

@@ -1,0 +1,617 @@
+/* LogiTrack 全局样式：只放 Apple 令牌层之外的东西——
+   时间轴中轴/节点、地图容器与标记、以及少量无法用 Chakra props 表达的动画。
+
+   原则：颜色全部走 var() 令牌，不写死色值（状态色除外，它来自 constants.js）。 */
+
+@import 'leaflet/dist/leaflet.css';
+
+:root {
+  color-scheme: light dark;
+  --tint: var(--blue);          /* 本 App 的主题色：Apple System Blue */
+  --tint-soft: rgba(0, 122, 255, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg-grouped);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   中轴时间轴
+   ============================================================ */
+
+.lt-timeline {
+  position: relative;
+  padding: 8px 0 24px;
+}
+
+/* 中轴线：一条竖线，贯穿整条时间轴 */
+.lt-axis {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 21px;
+  width: 2px;
+  background: var(--separator);
+  border-radius: 1px;
+}
+
+/* 已完成部分的中轴线用主题色实线覆盖——进度感来自这里 */
+.lt-axis-progress {
+  position: absolute;
+  top: 12px;
+  left: 21px;
+  width: 2px;
+  background: var(--tint);
+  border-radius: 1px;
+  transition: height var(--dur-slow) var(--ease-standard);
+}
+
+/* 运输中节点的流动虚线：这是本 App 唯一允许的循环动画，且有明确语义
+   （表示"货在路上"），不是装饰。用 background-position 动画实现，开销极低。 */
+.lt-flow {
+  position: absolute;
+  left: 20px;
+  width: 4px;
+  border-radius: 2px;
+  background-image: linear-gradient(
+    to bottom,
+    var(--tint) 0 6px,
+    transparent 6px 12px
+  );
+  background-size: 4px 12px;
+  animation: lt-flow 0.9s linear infinite;
+  opacity: 0.9;
+}
+
+@keyframes lt-flow {
+  from { background-position-y: 0; }
+  to   { background-position-y: 12px; }
+}
+
+/* 单个时间轴条目 */
+.lt-node {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding: 0 0 4px 0;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.lt-node:hover { background: var(--fill-tertiary); }
+
+/* 左侧圆点容器：固定宽度，使中轴线能对齐 */
+.lt-node-rail {
+  position: relative;
+  width: 44px;
+  flex: 0 0 44px;
+  display: flex;
+  justify-content: center;
+  padding-top: 14px;
+}
+
+/* 节点圆点：颜色 = 状态色（由内联 style 注入 --node-color） */
+.lt-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 3px solid var(--node-color, var(--gray));
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.lt-dot.is-current {
+  width: 18px;
+  height: 18px;
+  border-width: 4px;
+  box-shadow: 0 0 0 4px var(--node-soft, var(--fill-secondary));
+}
+.lt-dot.is-pending {
+  background: var(--bg-surface);
+  border-color: var(--separator-opaque);
+  opacity: 0.55;
+}
+.lt-dot.is-done { background: var(--node-color, var(--gray)); }
+
+.lt-node.is-selected .lt-dot { transform: scale(1.25); }
+
+/* 选中的时间轴条目：左侧主题色竖条 + 底色 */
+.lt-node.is-selected {
+  background: var(--tint-soft);
+}
+.lt-node.is-selected::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 8px; bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--tint);
+}
+
+.lt-node-body {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px 12px 0;
+  border-bottom: 1px solid var(--separator);
+}
+.lt-node:last-child .lt-node-body { border-bottom: none; }
+
+.lt-node-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lt-node-title {
+  font-size: var(--fs-headline);
+  font-weight: var(--fw-headline);
+  line-height: var(--lh-headline);
+  color: var(--label);
+}
+
+.lt-node-time {
+  font-size: var(--fs-footnote);
+  color: var(--label-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.lt-node-meta {
+  margin-top: 4px;
+  font-size: var(--fs-footnote);
+  color: var(--label-secondary);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lt-node-remark {
+  margin-top: 6px;
+  font-size: var(--fs-subhead);
+  line-height: var(--lh-subhead);
+  color: var(--label-secondary);
+}
+
+/* 选中高亮闪烁：点地图标记滚到时间轴时用，帮助眼睛定位 */
+.lt-flash {
+  animation: lt-flash 1.4s var(--ease-standard);
+}
+@keyframes lt-flash {
+  0%   { background: var(--tint-soft); }
+  100% { background: transparent; }
+}
+
+/* 扫描记录小标签 */
+.lt-scan-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: var(--fs-caption);
+  color: var(--label-secondary);
+  background: var(--fill-secondary);
+  border-radius: var(--radius-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   地图
+   ============================================================ */
+
+.lt-map-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.lt-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* 离线网格底图 */
+.lt-grid-tile {
+  width: 256px;
+  height: 256px;
+  background: var(--bg-surface);
+  border: 1px solid var(--separator);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+.lt-grid-label {
+  font-size: 10px;
+  color: var(--label-tertiary);
+  padding: 4px 6px;
+  font-family: var(--font-mono);
+}
+
+/* 离线提示条：悬浮在地图上方，毛玻璃 */
+.lt-map-offline-tip {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  padding: 6px 14px;
+  font-size: var(--fs-footnote);
+  color: var(--label);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+}
+
+/* 地图上的浮动信息卡（当前选中节点） */
+.lt-map-card {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 500;
+  max-width: 260px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-float);
+}
+
+/* 水滴标记 */
+.lt-marker-wrap { background: transparent; border: none; }
+
+.lt-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  background: var(--m-color, var(--blue));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+  transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-standard);
+}
+.lt-marker span {
+  transform: rotate(45deg);
+  line-height: 1;
+}
+.lt-marker.is-selected {
+  box-shadow: 0 0 0 3px #fff, 0 4px 12px rgba(0, 0, 0, 0.32);
+  animation: lt-marker-pop 0.4s var(--ease-spring);
+}
+@keyframes lt-marker-pop {
+  0%   { transform: rotate(-45deg) scale(0.7); }
+  100% { transform: rotate(-45deg) scale(1); }
+}
+
+/* Leaflet 弹窗：去掉默认圆角与边框，压到 Apple 基底 */
+.lt-popup { min-width: 168px; }
+.lt-popup-title {
+  font-size: var(--fs-subhead);
+  font-weight: 600;
+  color: var(--label);
+  margin-bottom: 4px;
+}
+.lt-popup-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-footnote);
+  color: var(--label-secondary);
+}
+.lt-popup-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block;
+}
+.lt-popup-type {
+  margin-left: auto;
+  font-size: var(--fs-caption);
+  color: var(--label-tertiary);
+}
+.lt-popup-sub {
+  margin-top: 3px;
+  font-size: var(--fs-caption);
+  color: var(--label-tertiary);
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--bg-surface);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  border: none;
+}
+.leaflet-popup-content { margin: 12px 14px; }
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: var(--glass-bg) !important;
+}
+.leaflet-bar a {
+  border-radius: var(--radius-sm) !important;
+  color: var(--label) !important;
+  background: var(--bg-surface) !important;
+  border-color: var(--separator) !important;
+}
+
+/* ============================================================
+   运单卡片 / 列表
+   ============================================================ */
+
+.lt-wb-card {
+  transition: transform var(--dur-fast) var(--ease-standard),
+              box-shadow var(--dur-fast) var(--ease-standard);
+}
+.lt-wb-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-float);
+}
+
+/* 状态胶囊：底色用状态色的 12% 透明版，文字用状态色 */
+.lt-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  font-size: var(--fs-footnote);
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* 进度条：运单完成度 */
+.lt-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fill-secondary);
+  overflow: hidden;
+}
+.lt-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--tint);
+  transition: width var(--dur-slow) var(--ease-standard);
+}
+
+/* 起点 → 终点 的路线摘要 */
+.lt-route-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-subhead);
+  color: var(--label);
+}
+.lt-route-line .lt-route-arrow {
+  flex: 1;
+  height: 1px;
+  min-width: 24px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--separator-opaque) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+/* 大搜索框（首页） */
+.lt-hero-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 8px 0 18px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-float);
+  transition: box-shadow var(--dur-base) var(--ease-standard);
+}
+.lt-hero-search:focus-within {
+  box-shadow: 0 0 0 4px var(--tint-soft), var(--shadow-float);
+}
+.lt-hero-search input {
+  flex: 1;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--fs-body);
+  color: var(--label);
+}
+.lt-hero-search input::placeholder { color: var(--label-tertiary); }
+
+/* ============================================================
+   统计卡 / 图表
+   ============================================================ */
+
+.lt-stat {
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+.lt-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.lt-stat-label {
+  font-size: var(--fs-footnote);
+  color: var(--label-secondary);
+}
+
+/* 纯 CSS 柱状图：避免为一两个小图表引入图表库 */
+.lt-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+}
+.lt-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+.lt-bar {
+  border-radius: 3px 3px 0 0;
+  background: var(--tint);
+  min-height: 2px;
+  transition: height var(--dur-slow) var(--ease-standard);
+}
+.lt-bar.is-alt { background: var(--orange); }
+.lt-bar-label {
+  font-size: 10px;
+  color: var(--label-tertiary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 横向排行条 */
+.lt-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+.lt-rank-name {
+  width: 132px;
+  flex: 0 0 132px;
+  font-size: var(--fs-subhead);
+  color: var(--label);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lt-rank-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--fill-secondary);
+  overflow: hidden;
+}
+.lt-rank-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--tint);
+  transition: width var(--dur-slow) var(--ease-standard);
+}
+.lt-rank-value {
+  width: 46px;
+  flex: 0 0 46px;
+  text-align: right;
+  font-size: var(--fs-footnote);
+  color: var(--label-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 环形图（状态分布）：用 conic-gradient，无需 SVG */
+.lt-donut {
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  position: relative;
+  flex: 0 0 148px;
+}
+.lt-donut::after {
+  content: '';
+  position: absolute;
+  inset: 26px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+}
+.lt-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* 图例 */
+.lt-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lt-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-footnote);
+  color: var(--label-secondary);
+}
+.lt-legend-swatch {
+  width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px;
+}
+
+/* 详情页双栏：左时间轴 / 右地图。窄屏时地图移到顶部并固定高度 */
+.lt-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.lt-detail-map {
+  position: sticky;
+  top: 76px;
+  height: calc(100vh - 132px);
+  min-height: 420px;
+}
+@media (max-width: 1023px) {
+  .lt-detail-grid { grid-template-columns: 1fr; }
+  .lt-detail-map {
+    position: relative;
+    top: 0;
+    height: 380px;
+    order: -1;
+  }
+}
+
+/* 细滚动条 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--separator-opaque);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 动效降级：Apple 设计要求 */
+@media (prefers-reduced-motion: reduce) {
+  .lt-flow, .lt-flash, .lt-marker.is-selected { animation: none !important; }
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

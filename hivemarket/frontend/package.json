@@ -1,0 +1,24 @@
+{
+  "name": "hivemarket-frontend",
+  "version": "1.0.0",
+  "description": "HiveMarket 校园二手交易平台 - 前端",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@primeuix/themes": "^3.0.1",
+    "echarts": "^5.6.0",
+    "primeicons": "^8.0.1",
+    "primevue": "^4.5.5",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.7"
+  }
+}

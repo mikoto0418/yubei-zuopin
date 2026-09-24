@@ -1,0 +1,93 @@
+@import 'tailwindcss';
+
+/* KitchenFlow 差异化：在 Apple 基底上只换主题色为 --orange，卡片小一号。 */
+:root {
+  --tint: var(--orange);
+  --tint-soft: rgba(255, 149, 0, 0.14);
+  --radius-card-kf: var(--radius-md); /* 比其它 App 小一号 */
+}
+
+@theme {
+  --color-tint: #ff9500;
+  --color-label: rgba(0, 0, 0, 0.92);
+  --color-label-secondary: rgba(60, 60, 67, 0.6);
+  --color-separator: rgba(60, 60, 67, 0.16);
+}
+
+html, body, #root { height: 100%; }
+
+/* 订单卡：高密度，比其他 App 卡片小一号 */
+.kf-card {
+  background: var(--bg-surface);
+  border: none;
+  border-radius: var(--radius-card-kf);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+.kf-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-float); }
+
+/* 超时卡片：橙色描边脉冲 —— 全站唯一允许的循环动画，且带语义 */
+@keyframes kf-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.45), var(--shadow-card); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 149, 0, 0), var(--shadow-card); }
+}
+.kf-overtime {
+  outline: 2px solid var(--orange);
+  outline-offset: -2px;
+  animation: kf-pulse 1.8s var(--ease-standard) infinite;
+}
+
+/* 进入动画 */
+@keyframes kf-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.kf-fade-up { animation: kf-fade-up var(--dur-base) var(--ease-standard) both; }
+
+@keyframes kf-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.kf-drawer-in { animation: kf-drawer-in 280ms cubic-bezier(0.32, 0.72, 0, 1); }
+
+@keyframes kf-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.kf-scale-in { animation: kf-scale-in var(--dur-base) var(--ease-spring); }
+
+/* 细滚动条 */
+.kf-scroll { scrollbar-width: thin; scrollbar-color: var(--label-tertiary) transparent; }
+.kf-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.kf-scroll::-webkit-scrollbar-thumb {
+  background: var(--label-tertiary); border-radius: 999px;
+  border: 2px solid transparent; background-clip: content-box;
+}
+.kf-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* 表格 */
+.kf-table { width: 100%; border-collapse: collapse; font-size: var(--fs-subhead); }
+.kf-table th {
+  text-align: left; font-weight: 600; font-size: var(--fs-footnote);
+  color: var(--label-secondary); padding: 10px 12px;
+  border-bottom: 1px solid var(--separator); white-space: nowrap;
+}
+.kf-table td { padding: 12px; border-bottom: 1px solid var(--separator); color: var(--label); }
+.kf-table tbody tr:last-child td { border-bottom: none; }
+.kf-table tbody tr:hover { background: var(--fill-tertiary); }
+
+/* 侧边导航 */
+.kf-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  height: 38px; padding: 0 12px; border-radius: var(--radius-sm);
+  font-size: var(--fs-subhead); color: var(--label-secondary);
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.kf-nav-item:hover { background: var(--fill-secondary); color: var(--label); }
+.kf-nav-item[data-active='true'] { background: var(--tint-soft); color: var(--tint); font-weight: 600; }
+
+/* 动画降级 */
+@media (prefers-reduced-motion: reduce) {
+  .kf-overtime { animation: none; }
+  .kf-fade-up, .kf-drawer-in, .kf-scale-in { animation: none; }
+}

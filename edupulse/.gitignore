@@ -1,0 +1,30 @@
+# ---- 环境与密钥 ----
+.env
+*.env
+!.env.example
+
+# ---- Node ----
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# ---- Python ----
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# ---- 数据库 ----
+*.db
+*.sqlite3
+*.db-wal
+*.db-shm
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- 日志 ----
+*.log

@@ -1,0 +1,23 @@
+# 依赖与产物
+node_modules/
+dist/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 运行时数据
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+data/
+
+# 日志与配置
+*.log
+.env
+
+# IDE / 系统
+.DS_Store
+Thumbs.db

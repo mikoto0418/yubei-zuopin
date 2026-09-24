@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <title>ExamPrep · AI 备考规划</title>
+
+  <!-- Open Props 基础重置（本地 vendor） -->
+  <link rel="stylesheet" href="vendor/open-props/normalize.min.css" />
+
+  <!-- Shoelace 主题变量（本地 vendor，跟随系统深浅色） -->
+  <link rel="stylesheet" href="vendor/shoelace/themes/light.css" media="(prefers-color-scheme: light)" />
+  <link rel="stylesheet" href="vendor/shoelace/themes/dark.css" media="(prefers-color-scheme: dark)" />
+
+  <!-- Apple 设计基底令牌（共享层） -->
+  <link rel="stylesheet" href="css/apple-tokens.css" />
+  <!-- 本项目皮肤：主题色 --yellow + 命令行 + 时间块日历 -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Shoelace 深色主题需要根元素带类名（dark.css 的 :host 选择器只在深色下加载） -->
+  <script>
+    (function () {
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
+      var sync = function () {
+        document.documentElement.classList.toggle('sl-theme-dark', mq.matches);
+      };
+      sync();
+      if (mq.addEventListener) mq.addEventListener('change', sync);
+      else if (mq.addListener) mq.addListener(sync);
+    })();
+  </script>
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- 顶部毛玻璃导航 -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">EP</span>
+        <span>ExamPrep</span>
+        <span class="brand-sub">AI 备考规划</span>
+      </div>
+      <nav class="nav" id="navbar" style="display:none;">
+        <button class="navbtn active" data-view="calendar">时间块日历</button>
+        <button class="navbtn" data-view="plan">计划</button>
+        <button class="navbtn" data-view="exam">模考</button>
+        <button class="navbtn" data-view="wrong">错题本</button>
+        <button class="navbtn" data-view="material">资料库</button>
+        <button class="navbtn" data-view="reminder">提醒</button>
+        <button class="navbtn" data-view="quiz">做题</button>
+        <button class="navbtn" data-view="stats">统计</button>
+        <button class="navbtn" data-view="goal">目标</button>
+        <button class="navbtn" data-view="ai">AI</button>
+        <button class="navbtn admin-only" data-view="admin" style="display:none;">管理</button>
+        <button class="navbtn" data-view="me">我的</button>
+      </nav>
+    </header>
+
+    <div class="statusbar" id="statusbar" style="display:none;">
+      <span class="status-msg" id="statusMsg">—</span>
+      <span class="status-clock" id="statusClock">--:--</span>
+    </div>
+
+    <!-- ========== 登录 ========== -->
+    <section id="authView" class="view active">
+      <div class="auth-hero">
+        <div class="mark">EP</div>
+        <h1>ExamPrep</h1>
+        <p>把备考计划排进日历，按 30 分钟推进每一天</p>
+      </div>
+      <div class="card auth-card">
+        <div id="loginPanel">
+          <div class="field">
+            <label>用户名</label>
+            <sl-input id="loginUser" type="text" autocomplete="username" placeholder="admin / demo / student1"></sl-input>
+          </div>
+          <div class="field">
+            <label>密码</label>
+            <sl-input id="loginPass" type="password" password-toggle autocomplete="current-password" placeholder="至少 6 位"></sl-input>
+          </div>
+          <div class="field row">
+            <sl-button id="btnLogin" variant="primary" style="flex:1;">
+              <sl-icon slot="prefix" name="box-arrow-in-right"></sl-icon>登录
+            </sl-button>
+            <sl-button id="btnGotoRegister" variant="default">注册</sl-button>
+          </div>
+          <div id="loginMsg" class="msg"></div>
+
+          <div id="registerBox" style="display:none;">
+            <hr class="apple-separator" style="margin:var(--sp-4) 0;" />
+            <div class="field">
+              <label>用户名</label>
+              <sl-input id="regUser" type="text" autocomplete="off" placeholder="注册用户名"></sl-input>
+            </div>
+            <div class="field">
+              <label>密码（至少 6 位）</label>
+              <sl-input id="regPass" type="password" password-toggle autocomplete="new-password" placeholder="注册密码"></sl-input>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label>目标考试</label>
+                <sl-select id="regExam" value="考研">
+                  <sl-option value="考研">考研</sl-option>
+                  <sl-option value="四六级">四六级</sl-option>
+                  <sl-option value="考公">考公</sl-option>
+                </sl-select>
+              </div>
+              <div class="field">
+                <label>考试日期</label>
+                <sl-input id="regDate" type="date"></sl-input>
+              </div>
+            </div>
+            <div class="field row">
+              <sl-button id="btnRegister" variant="primary">注册并登录</sl-button>
+              <sl-button id="btnBackLogin" variant="text">返回登录</sl-button>
+            </div>
+            <div id="regMsg" class="msg"></div>
+          </div>
+        </div>
+        <p class="auth-hint">
+          演示账号：demo / demo123 · 助教：student1 / student123 · 管理员：admin / admin123<br />
+          登录后可在底部命令行敲 <strong>help</strong> 查看全部命令
+        </p>
+      </div>
+    </section>
+
+    <!-- ========== 业务视图 ========== -->
+    <section id="views">
+      <!-- 1. 时间块日历 -->
+      <div class="view" data-view="calendar">
+        <h1 class="view-title">时间块日历</h1>
+        <p class="view-desc">30 分钟粒度排程 · 拖拽调整时段 · 点击状态点流转 planned → in_progress → done / skipped</p>
+
+        <div class="cal-toolbar">
+          <sl-button id="btnCalPrev" variant="default" size="small"><sl-icon slot="prefix" name="chevron-left"></sl-icon>前一天</sl-button>
+          <span class="cal-date" id="calDate">—</span>
+          <sl-button id="btnCalNext" variant="default" size="small">后一天<sl-icon slot="suffix" name="chevron-right"></sl-icon></sl-button>
+          <sl-button id="btnCalToday" variant="text" size="small">回到今天</sl-button>
+          <span class="spacer"></span>
+          <sl-button id="btnCalWeek" variant="default" size="small">周视图</sl-button>
+          <sl-button id="btnAddBlock" variant="primary" size="small"><sl-icon slot="prefix" name="plus-lg"></sl-icon>新建时间块</sl-button>
+          <sl-button id="btnAiPlanCal" variant="default" size="small"><sl-icon slot="prefix" name="stars"></sl-icon>生成 AI 计划</sl-button>
+        </div>
+
+        <div id="calDayWrap" class="cal">
+          <div class="cal-axis" id="calAxis"></div>
+          <div class="cal-day" id="calDay">
+            <div class="cal-grid" id="calGrid"></div>
+            <div class="cal-slots" id="calSlots"></div>
+          </div>
+        </div>
+
+        <div id="calWeekWrap" style="display:none;">
+          <div class="cal-week" id="calWeek"></div>
+        </div>
+
+        <div class="cal-legend">
+          <span><i class="dot dot--planned"></i>待开始</span>
+          <span><i class="dot dot--in_progress"></i>进行中</span>
+          <span><i class="dot dot--done"></i>已完成</span>
+          <span><i class="dot dot--skipped"></i>已跳过</span>
+          <span>提示：拖动时间块可改时段，改完自动校验 30 分钟对齐与冲突</span>
+        </div>
+
+        <div class="subtitle">当日时间块</div>
+        <div id="calList" class="list"></div>
+      </div>
+
+      <!-- 2. 计划 -->
+      <div class="view" data-view="plan">
+        <h1 class="view-title">备考计划</h1>
+        <p class="view-desc">每日计划的文字版记录 · 可从时间块派生，也可单独维护</p>
+
+        <div class="cal-toolbar">
+          <sl-button id="btnAiPlan" variant="primary"><sl-icon slot="prefix" name="stars"></sl-icon>生成 AI 计划</sl-button>
+          <sl-button id="btnSpeakPlan" variant="default"><sl-icon slot="prefix" name="volume-up"></sl-icon>语音朗读今日计划</sl-button>
+          <sl-button id="btnSpeakRecognize" variant="default"><sl-icon slot="prefix" name="mic"></sl-icon>语音输入学习时长</sl-button>
+          <span id="aiSource" class="chips"></span>
+        </div>
+
+        <div class="card">
+          <div class="card-head">新建计划</div>
+          <div class="form-grid">
+            <div class="field"><label>科目</label><sl-input id="pSubject" placeholder="如 数学"></sl-input></div>
+            <div class="field"><label>预计时长（小时）</label><sl-input id="pHours" type="number" min="0" step="0.5" placeholder="1.5"></sl-input></div>
+          </div>
+          <div class="field"><label>内容</label><sl-textarea id="pContent" rows="2" placeholder="如 高数第三章习题 1-20"></sl-textarea></div>
+          <sl-button id="btnAddPlan" variant="primary"><sl-icon slot="prefix" name="plus-lg"></sl-icon>新建计划</sl-button>
+        </div>
+
+        <div class="form-grid">
+          <div class="field"><label>搜索</label><sl-input id="planSearch" placeholder="搜科目 / 内容" clearable><sl-icon slot="prefix" name="search"></sl-icon></sl-input></div>
+          <div class="field"><label>显示范围</label>
+            <sl-select id="planRange" value="30">
+              <sl-option value="today">今日</sl-option>
+              <sl-option value="7">近 7 天</sl-option>
+              <sl-option value="30">近 30 天</sl-option>
+              <sl-option value="all">全部</sl-option>
+            </sl-select>
+          </div>
+        </div>
+        <div id="planList" class="list"></div>
+      </div>
+
+      <!-- 3. 模考记录 -->
+      <div class="view" data-view="exam">
+        <h1 class="view-title">模考记录</h1>
+        <p class="view-desc">录入每次模考总分与各科得分，跟踪分数趋势与提分幅度</p>
+
+        <div class="kpis" id="examKpis"></div>
+
+        <div class="card">
+          <div class="card-head">录入模考</div>
+          <div class="form-grid">
+            <div class="field"><label>模考名称</label><sl-input id="exName" placeholder="如 第 13 次全真模考"></sl-input></div>
+            <div class="field"><label>考试日期</label><sl-input id="exDate" type="date"></sl-input></div>
+            <div class="field"><label>总分</label><sl-input id="exTotal" type="number" min="0" placeholder="430"></sl-input></div>
+            <div class="field"><label>满分</label><sl-input id="exFull" type="number" min="1" placeholder="500"></sl-input></div>
+            <div class="field"><label>排名（可选）</label><sl-input id="exRank" type="number" min="1" placeholder="15"></sl-input></div>
+          </div>
+          <div class="field"><label>各科得分（JSON 数组，可留空）</label>
+            <sl-textarea id="exScores" rows="2" placeholder='[{"subject":"数学","score":120,"full":150},{"subject":"英语","score":70,"full":100}]'></sl-textarea>
+          </div>
+          <sl-button id="btnAddExam" variant="primary"><sl-icon slot="prefix" name="plus-lg"></sl-icon>录入模考</sl-button>
+        </div>
+
+        <div class="card-grid">
+          <div class="chart-card"><div class="card-head">总分趋势</div><canvas id="examTrendChart" height="200"></canvas></div>
+          <div class="chart-card"><div class="card-head">各科平均得分率</div><canvas id="examSubjectChart" height="200"></canvas></div>
+        </div>
+
+        <div class="subtitle">模考列表</div>
+        <div id="examList" class="list"></div>
+      </div>
+
+      <!-- 4. 错题本 -->
+      <div class="view" data-view="wrong">
+        <h1 class="view-title">错题本</h1>
+        <p class="view-desc">记录错题 · 关联知识点与错因 · 重做后标记掌握</p>
+
+        <div class="kpis" id="wrongKpis"></div>
+
+        <div class="card">
+          <div class="card-head">录入错题</div>
+          <div class="form-grid">
+            <div class="field"><label>科目</label><sl-input id="wSubject" placeholder="如 数学"></sl-input></div>
+            <div class="field"><label>知识点</label><sl-input id="wKp" placeholder="如 洛必达法则"></sl-input></div>
+            <div class="field"><label>我的答案</label><sl-input id="wMine" placeholder="如 1/2"></sl-input></div>
+            <div class="field"><label>正确答案</label><sl-input id="wRight" placeholder="如 1/2"></sl-input></div>
+          </div>
+          <div class="field"><label>题目</label><sl-textarea id="wQuestion" rows="2" placeholder="粘贴或描述题目"></sl-textarea></div>
+          <div class="field"><label>错因</label><sl-input id="wReason" placeholder="如 忘记验证 0/0 条件"></sl-input></div>
+          <sl-button id="btnAddWrong" variant="primary"><sl-icon slot="prefix" name="plus-lg"></sl-icon>录入错题</sl-button>
+        </div>
+
+        <div class="form-grid">
+          <div class="field"><label>搜索</label><sl-input id="wrongSearch" placeholder="搜题目 / 知识点 / 错因" clearable><sl-icon slot="prefix" name="search"></sl-icon></sl-input></div>
+          <div class="field"><label>状态</label>
+            <sl-select id="wrongStatus" value="">
+              <sl-option value="">全部</sl-option>
+              <sl-option value="new">待重做</sl-option>
+              <sl-option value="reviewing">重做中</sl-option>
+              <sl-option value="mastered">已掌握</sl-option>
+            </sl-select>
+          </div>
+        </div>
+        <div id="wrongList" class="list"></div>
+      </div>
+
+      <!-- 5. 资料库 -->
+      <div class="view" data-view="material">
+        <h1 class="view-title">学习资料库</h1>
+        <p class="view-desc">按科目归档书籍 / 链接 / 笔记，记录阅读进度</p>
+
+        <div class="kpis" id="matKpis"></div>
+
+        <div class="card">
+          <div class="card-head">新增资料</div>
+          <div class="form-grid">
+            <div class="field"><label>科目</label><sl-input id="mSubject" placeholder="如 英语"></sl-input></div>
+            <div class="field"><label>标题</label><sl-input id="mTitle" placeholder="如 考研英语真题 2015-2024"></sl-input></div>
+            <div class="field"><label>类型</label>
+              <sl-select id="mType" value="book">
+                <sl-option value="book">书籍</sl-option>
+                <sl-option value="link">链接</sl-option>
+                <sl-option value="note">笔记</sl-option>
+                <sl-option value="video">视频</sl-option>
+              </sl-select>
+            </div>
+            <div class="field"><label>链接（type=link 时）</label><sl-input id="mUrl" placeholder="https://..."></sl-input></div>
+            <div class="field"><label>总页数</label><sl-input id="mPages" type="number" min="0" placeholder="320"></sl-input></div>
+          </div>
+          <sl-button id="btnAddMat" variant="primary"><sl-icon slot="prefix" name="plus-lg"></sl-icon>新增资料</sl-button>
+        </div>
+
+        <div class="form-grid">
+          <div class="field"><label>搜索</label><sl-input id="matSearch" placeholder="搜标题 / 备注" clearable><sl-icon slot="prefix" name="search"></sl-icon></sl-input></div>
+          <div class="field"><label>状态</label>
+            <sl-select id="matStatus" value="">
+              <sl-option value="">全部</sl-option>
+              <sl-option value="reading">阅读中</sl-option>
+              <sl-option value="finished">已完成</sl-option>
+              <sl-option value="paused">已暂停</sl-option>
+            </sl-select>
+          </div>
+        </div>
+        <div id="matList" class="list"></div>
+      </div>
+
+      <!-- 6. 提醒中心 -->
+      <div class="view" data-view="reminder">
+        <h1 class="view-title">提醒中心</h1>
+        <p class="view-desc">计划开始前提醒 · 未完成计划自动提醒补做</p>
+
+        <div class="kpis" id="remKpis"></div>
+
+        <div class="cal-toolbar">
+          <sl-button id="btnScanReminders" variant="primary"><sl-icon slot="prefix" name="arrow-repeat"></sl-icon>扫描未完成计划</sl-button>
+          <sl-button id="btnAddReminder" variant="default"><sl-icon slot="prefix" name="plus-lg"></sl-icon>新建提醒</sl-button>
+        </div>
+
+        <div class="form-grid">
+          <div class="field"><label>搜索</label><sl-input id="remSearch" placeholder="搜提醒标题" clearable><sl-icon slot="prefix" name="search"></sl-icon></sl-input></div>
+          <div class="field"><label>状态</label>
+            <sl-select id="remStatus" value="">
+              <sl-option value="">全部</sl-option>
+              <sl-option value="pending">待触发</sl-option>
+              <sl-option value="sent">已发送</sl-option>
+              <sl-option value="done">已完成</sl-option>
+              <sl-option value="dismissed">已忽略</sl-option>
+            </sl-select>
+          </div>
+        </div>
+        <div id="remList" class="list"></div>
+      </div>
+
+      <!-- 7. 做题 -->
+      <div class="view" data-view="quiz">
+        <h1 class="view-title">做题追踪</h1>
+        <p class="view-desc">按科目与知识点统计正确率</p>
+
+        <div class="card">
+          <div class="card-head">录入做题</div>
+          <div class="form-grid">
+            <div class="field"><label>科目</label><sl-input id="qSubject" placeholder="如 英语"></sl-input></div>
+            <div class="field"><label>做题数</label><sl-input id="qTotal" type="number" min="1" placeholder="20"></sl-input></div>
+            <div class="field"><label>做对数</label><sl-input id="qCorrect" type="number" min="0" placeholder="16"></sl-input></div>
+            <div class="field"><label>知识点</label><sl-input id="qTags" placeholder="如 阅读理解,完形"></sl-input></div>
+          </div>
+          <sl-button id="btnAddTask" variant="primary"><sl-icon slot="prefix" name="plus-lg"></sl-icon>录入做题</sl-button>
+        </div>
+
+        <sl-tab-group active="quiz-recs">
+          <sl-tab slot="nav" panel="quiz-recs">做题记录</sl-tab>
+          <sl-tab slot="nav" panel="quiz-acc">正确率总览</sl-tab>
+          <sl-tab-panel name="quiz-recs">
+            <div class="field"><label>搜索</label><sl-input id="taskSearch" placeholder="按科目 / 知识点筛选" clearable><sl-icon slot="prefix" name="search"></sl-icon></sl-input></div>
+            <div id="taskList" class="list"></div>
+          </sl-tab-panel>
+          <sl-tab-panel name="quiz-acc">
+            <div id="accuracyView" class="list"></div>
+          </sl-tab-panel>
+        </sl-tab-group>
+      </div>
+
+      <!-- 8. 统计 -->
+      <div class="view" data-view="stats">
+        <h1 class="view-title">学习统计</h1>
+        <p class="view-desc">学习时长趋势与每日明细</p>
+
+        <div class="card">
+          <div class="field row">
+            <label>录入今日时长（小时）</label>
+            <sl-input id="statHours" type="number" step="0.5" min="0" placeholder="2" style="max-width:140px;"></sl-input>
+            <sl-button id="btnAddStat" variant="primary">记录</sl-button>
+          </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom:var(--sp-5);">
+          <div class="card-head">近 14 天学习时长</div>
+          <canvas id="statsChart" height="180"></canvas>
+        </div>
+        <div id="statText" class="list"></div>
+      </div>
+
+      <!-- 9. 目标 -->
+      <div class="view" data-view="goal">
+        <h1 class="view-title">目标管理</h1>
+        <p class="view-desc">按科目设定目标分与权重，跟踪达成进度</p>
+
+        <div class="card">
+          <div class="card-head">新建目标</div>
+          <div class="form-grid">
+            <div class="field"><label>科目</label><sl-input id="gSubject" placeholder="如 政治"></sl-input></div>
+            <div class="field"><label>目标分</label><sl-input id="gTarget" type="number" min="1" placeholder="80"></sl-input></div>
+            <div class="field"><label>权重</label><sl-input id="gWeight" type="number" min="0" placeholder="1"></sl-input></div>
+            <div class="field"><label>当前进度分</label><sl-input id="gProgress" type="number" min="0" placeholder="0"></sl-input></div>
+          </div>
+          <sl-button id="btnAddGoal" variant="primary"><sl-icon slot="prefix" name="plus-lg"></sl-icon>新建目标</sl-button>
+        </div>
+
+        <div class="subtitle">目标汇总</div>
+        <div id="goalSummary" class="list"></div>
+        <div class="field"><label>搜索</label><sl-input id="goalSearch" placeholder="按科目筛选" clearable><sl-icon slot="prefix" name="search"></sl-icon></sl-input></div>
+        <div id="goalList" class="list"></div>
+      </div>
+
+      <!-- 10. AI -->
+      <div class="view" data-view="ai">
+        <h1 class="view-title">AI 智能分析</h1>
+        <p class="view-desc">生成提分建议，可一键落库为待办提醒</p>
+
+        <div class="card">
+          <div class="field row">
+            <label>科目（留空自动选最弱科目）</label>
+            <sl-input id="aiSubject" placeholder="如 数学" clearable style="max-width:240px;"></sl-input>
+            <sl-button id="btnAnalyze" variant="primary"><sl-icon slot="prefix" name="stars"></sl-icon>生成提升建议</sl-button>
+            <sl-button id="btnAnalyzeSave" variant="default">生成并落库为待办</sl-button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">提升建议</div>
+          <div id="aiResult"><p class="apple-secondary">尚未生成建议。</p></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">单题讲解</div>
+          <div class="field"><label>科目</label><sl-input id="aiExpSubject" placeholder="如 数学" style="max-width:240px;"></sl-input></div>
+          <div class="field"><label>题目</label><sl-textarea id="aiExpQuestion" rows="2" placeholder="粘贴题目内容"></sl-textarea></div>
+          <sl-button id="btnExplain" variant="primary">生成讲解</sl-button>
+          <div id="aiExplainResult" style="margin-top:var(--sp-4);"></div>
+        </div>
+      </div>
+
+      <!-- 11. 管理 -->
+      <div class="view" data-view="admin">
+        <h1 class="view-title">管理后台</h1>
+        <p class="view-desc">全站学习数据看板（管理员 / 助教可见）</p>
+
+        <div class="kpis" id="adminKpis"></div>
+
+        <sl-tab-group active="admin-charts">
+          <sl-tab slot="nav" panel="admin-charts">图表</sl-tab>
+          <sl-tab slot="nav" panel="admin-users">用户列表</sl-tab>
+          <sl-tab-panel name="admin-charts">
+            <div class="card-grid">
+              <div class="chart-card"><div class="card-head">各科目正确率</div><canvas id="radarChart" height="200"></canvas></div>
+              <div class="chart-card"><div class="card-head">学习时长趋势</div><canvas id="trendChart" height="200"></canvas></div>
+              <div class="chart-card"><div class="card-head">计划块状态分布</div><canvas id="barBlockChart" height="200"></canvas></div>
+              <div class="chart-card"><div class="card-head">目标达成进度</div><canvas id="barGoalChart" height="200"></canvas></div>
+              <div class="chart-card"><div class="card-head">用户注册分布</div><canvas id="barExamChart" height="200"></canvas></div>
+              <div class="chart-card"><div class="card-head">账号角色分布</div><canvas id="barRoleChart" height="200"></canvas></div>
+            </div>
+          </sl-tab-panel>
+          <sl-tab-panel name="admin-users">
+            <div id="adminUsers" class="list"></div>
+          </sl-tab-panel>
+        </sl-tab-group>
+      </div>
+
+      <!-- 12. 我的 -->
+      <div class="view" data-view="me">
+        <h1 class="view-title">我的</h1>
+        <p class="view-desc">个人进度概览与账号设置</p>
+
+        <div class="kpis" id="meKpis"></div>
+
+        <div class="card">
+          <div class="card-head">账号设置</div>
+          <div class="form-grid">
+            <div class="field"><label>目标考试</label>
+              <sl-select id="meExam" value="考研">
+                <sl-option value="考研">考研</sl-option>
+                <sl-option value="四六级">四六级</sl-option>
+                <sl-option value="考公">考公</sl-option>
+              </sl-select>
+            </div>
+            <div class="field"><label>考试日期</label><sl-input id="meDate" type="date"></sl-input></div>
+          </div>
+          <sl-button id="btnUpdateMe" variant="primary">保存</sl-button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">科目与知识点</div>
+          <div id="meSubjects" class="list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 错误 / 无权限 / 404 ========== -->
+    <section id="errView" class="view">
+      <div class="state" style="margin-top:var(--sp-8);">
+        <div class="state-mark"><sl-icon name="exclamation-triangle"></sl-icon></div>
+        <div class="state-title" id="errCode">出错了</div>
+        <div class="state-desc" id="errMsg">发生了未知错误。</div>
+        <sl-button id="btnErrBack" variant="primary">返回首页</sl-button>
+      </div>
+    </section>
+
+    <!-- 命令行输出区 -->
+    <section class="console" id="console" aria-live="polite" aria-label="命令输出"></section>
+
+    <!-- 命令行输入 -->
+    <footer class="inputbar" id="inputbar" style="display:none;">
+      <div class="cmd-ac" id="cmdAc" role="listbox" aria-label="命令补全候选"></div>
+      <span class="cmd-prompt">exam-prep ›</span>
+      <sl-input id="cmdInput" autocomplete="off" spellcheck="false"
+                placeholder="输入命令，敲 help 查看全部命令" aria-label="命令行输入"></sl-input>
+      <sl-button id="btnLogout" variant="text"><sl-icon slot="prefix" name="box-arrow-right"></sl-icon>退出</sl-button>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <!-- 通用弹窗 -->
+  <sl-dialog id="modal" label="编辑">
+    <div id="modalBody"></div>
+    <div class="modal-actions" slot="footer">
+      <sl-button id="btnModalCancel" variant="default">取消</sl-button>
+      <sl-button id="btnModalSave" variant="primary">保存</sl-button>
+    </div>
+  </sl-dialog>
+
+  <!-- 图表库（本地 vendor） -->
+  <script src="vendor/chartjs/chart.umd.min.js"></script>
+  <!-- Shoelace autoloader（本地 vendor） -->
+  <script type="module" src="vendor/shoelace/shoelace.js" data-shoelace="/vendor/shoelace"></script>
+  <!-- 组件就绪后重新同步 tab-group 的 active，并让图表重算尺寸 -->
+  <script type="module">
+    const need = ['sl-tab-group', 'sl-tab-panel', 'sl-tab'];
+    Promise.all(need.map((t) => customElements.whenDefined(t))).then(() => {
+      document.querySelectorAll('sl-tab-group').forEach((tg) => {
+        const want = tg.getAttribute('active');
+        if (!want) return;
+        tg.active = undefined;
+        requestAnimationFrame(() => { tg.active = want; });
+      });
+      window.dispatchEvent(new Event('resize'));
+    });
+  </script>
+  <script src="js/app.js"></script>
+</body>
+</html>

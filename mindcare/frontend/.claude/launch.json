@@ -1,0 +1,1 @@
+{"configurations":[{"name":"mindcare-preview","port":4180,"runtimeArgs":["vite","preview","--port","4180"],"runtimeExecutable":"npx"}],"version":"0.0.1"}
